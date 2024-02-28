@@ -35,6 +35,10 @@ describe Category do
       expect(Category.create(category: "    ")).not_to be_valid
     end
 
+    it "does not allow an empty category to be saved 6" do
+      expect(Category.create(category: "     ")).not_to be_valid
+    end
+
     it "does not allow a category with a name too long to be saved" do
       expect(Category.create(category: "A" * 26)).not_to be_valid
     end
