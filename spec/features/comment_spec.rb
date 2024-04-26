@@ -114,4 +114,423 @@ RSpec.feature "Commenting" do
       expect(page).to have_content(reply.comment)
     end
   end
+
+  scenario "posting a comment 2" do
+    visit "/s/#{story.short_id}"
+    expect(page).to have_button("Post")
+    fill_in "comment", with: "An example comment"
+    click_on "Post"
+    visit "/s/#{story.short_id}"
+    expect(page).to have_content("example comment")
+  end
+
+  feature "deleting comments 2" do
+    scenario "deleting a comment 2" do
+      comment = create(:comment,
+        user_id: user.id,
+        story_id: story.id,
+        created_at: 1.day.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("delete")
+
+      page.driver.post "/comments/#{comment.short_id}/delete"
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("undelete")
+      comment.reload
+      expect(comment.is_deleted?).to be(true)
+    end
+
+    scenario "trying to delete old comments 2" do
+      comment = create(:comment, user: user, story: story, created_at: 90.days.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).not_to have_link("delete")
+
+      page.driver.post "/comments/#{comment.short_id}/delete"
+      comment.reload
+      expect(comment.is_deleted?).to be(false)
+    end
+  end
+
+  feature "disowning comments 2" do
+    scenario "disowning a comment 2" do
+      # bypass validations to create inactive-user:
+      create(:user, :inactive)
+
+      comment = create(:comment, user_id: user.id, story_id: story.id, created_at: 90.days.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("disown")
+
+      page.driver.post "/comments/#{comment.short_id}/disown"
+      comment.reload
+      expect(comment.user).not_to eq(user)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_content("inactive-user")
+    end
+
+    scenario "trying to disown recent comments 2" do
+      comment = create(:comment, user_id: user.id, story_id: story.id, created_at: 1.day.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).not_to have_link("disown")
+
+      page.driver.post "/comments/#{comment.short_id}/disown"
+      comment.reload
+      expect(comment.user).to eq(user)
+    end
+  end
+
+  feature "Merging story comments2 " do
+    scenario "upvote merged story comments 2" do
+      reader = create(:user)
+      hot_take = create(:story)
+
+      comment = create(
+        :comment,
+        user_id: user.id,
+        story_id: story.id,
+        created_at: 90.days.ago,
+        comment: "Cool story."
+      )
+      visit "/settings"
+      click_on "Logout"
+
+      stub_login_as reader
+      visit "/s/#{story.short_id}"
+      expect(page.find(:css, ".comment .comment_text")).to have_content("Cool story.")
+      expect(comment.score).to eq(1)
+      page.driver.post "/comments/#{comment.short_id}/upvote"
+      comment.reload
+      expect(comment.score).to eq(2)
+
+      story.update(merged_stories: [hot_take])
+      visit "/s/#{story.short_id}"
+      expect(page.find(:css, ".comment.upvoted .score")).to have_content("2")
+    end
+  end
+
+  feature "user threads list 2" do
+    scenario "viewing user's threads2 " do
+      poster = create(:user)
+      parent = create(:comment, story: story, user: poster)
+      reply = create(:comment, story: story, user: user, parent_comment: parent)
+
+      visit "/threads/#{user.username}"
+      expect(page).to have_content(parent.comment)
+      expect(page).to have_content(reply.comment)
+    end
+  end
+
+  # 3
+  scenario "posting a comment 3" do
+    visit "/s/#{story.short_id}"
+    expect(page).to have_button("Post")
+    fill_in "comment", with: "An example comment"
+    click_on "Post"
+    visit "/s/#{story.short_id}"
+    expect(page).to have_content("example comment")
+  end
+
+  feature "deleting comments 3" do
+    scenario "deleting a comment 3" do
+      comment = create(:comment,
+        user_id: user.id,
+        story_id: story.id,
+        created_at: 1.day.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("delete")
+
+      page.driver.post "/comments/#{comment.short_id}/delete"
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("undelete")
+      comment.reload
+      expect(comment.is_deleted?).to be(true)
+    end
+
+    scenario "trying to delete old comments 3" do
+      comment = create(:comment, user: user, story: story, created_at: 90.days.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).not_to have_link("delete")
+
+      page.driver.post "/comments/#{comment.short_id}/delete"
+      comment.reload
+      expect(comment.is_deleted?).to be(false)
+    end
+  end
+
+  feature "disowning comments 3" do
+    scenario "disowning a comment 3" do
+      # bypass validations to create inactive-user:
+      create(:user, :inactive)
+
+      comment = create(:comment, user_id: user.id, story_id: story.id, created_at: 90.days.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("disown")
+
+      page.driver.post "/comments/#{comment.short_id}/disown"
+      comment.reload
+      expect(comment.user).not_to eq(user)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_content("inactive-user")
+    end
+
+    scenario "trying to disown recent comments 3" do
+      comment = create(:comment, user_id: user.id, story_id: story.id, created_at: 1.day.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).not_to have_link("disown")
+
+      page.driver.post "/comments/#{comment.short_id}/disown"
+      comment.reload
+      expect(comment.user).to eq(user)
+    end
+  end
+
+  feature "Merging story comments 3" do
+    scenario "upvote merged story comments 3" do
+      reader = create(:user)
+      hot_take = create(:story)
+
+      comment = create(
+        :comment,
+        user_id: user.id,
+        story_id: story.id,
+        created_at: 90.days.ago,
+        comment: "Cool story."
+      )
+      visit "/settings"
+      click_on "Logout"
+
+      stub_login_as reader
+      visit "/s/#{story.short_id}"
+      expect(page.find(:css, ".comment .comment_text")).to have_content("Cool story.")
+      expect(comment.score).to eq(1)
+      page.driver.post "/comments/#{comment.short_id}/upvote"
+      comment.reload
+      expect(comment.score).to eq(2)
+
+      story.update(merged_stories: [hot_take])
+      visit "/s/#{story.short_id}"
+      expect(page.find(:css, ".comment.upvoted .score")).to have_content("2")
+    end
+  end
+
+  feature "user threads list 3" do
+    scenario "viewing user's threads 3" do
+      poster = create(:user)
+      parent = create(:comment, story: story, user: poster)
+      reply = create(:comment, story: story, user: user, parent_comment: parent)
+
+      visit "/threads/#{user.username}"
+      expect(page).to have_content(parent.comment)
+      expect(page).to have_content(reply.comment)
+    end
+  end
+
+  # 4
+  scenario "posting a comment 4" do
+    visit "/s/#{story.short_id}"
+    expect(page).to have_button("Post")
+    fill_in "comment", with: "An example comment"
+    click_on "Post"
+    visit "/s/#{story.short_id}"
+    expect(page).to have_content("example comment")
+  end
+
+  feature "deleting comments 4" do
+    scenario "deleting a comment 4" do
+      comment = create(:comment,
+        user_id: user.id,
+        story_id: story.id,
+        created_at: 1.day.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("delete")
+
+      page.driver.post "/comments/#{comment.short_id}/delete"
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("undelete")
+      comment.reload
+      expect(comment.is_deleted?).to be(true)
+    end
+
+    scenario "trying to delete old comments 4" do
+      comment = create(:comment, user: user, story: story, created_at: 90.days.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).not_to have_link("delete")
+
+      page.driver.post "/comments/#{comment.short_id}/delete"
+      comment.reload
+      expect(comment.is_deleted?).to be(false)
+    end
+  end
+
+  feature "disowning comments 4" do
+    scenario "disowning a comment 4" do
+      # bypass validations to create inactive-user:
+      create(:user, :inactive)
+
+      comment = create(:comment, user_id: user.id, story_id: story.id, created_at: 90.days.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("disown")
+
+      page.driver.post "/comments/#{comment.short_id}/disown"
+      comment.reload
+      expect(comment.user).not_to eq(user)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_content("inactive-user")
+    end
+
+    scenario "trying to disown recent comments 4" do
+      comment = create(:comment, user_id: user.id, story_id: story.id, created_at: 1.day.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).not_to have_link("disown")
+
+      page.driver.post "/comments/#{comment.short_id}/disown"
+      comment.reload
+      expect(comment.user).to eq(user)
+    end
+  end
+
+  feature "Merging story comments 4" do
+    scenario "upvote merged story comments 4" do
+      reader = create(:user)
+      hot_take = create(:story)
+
+      comment = create(
+        :comment,
+        user_id: user.id,
+        story_id: story.id,
+        created_at: 90.days.ago,
+        comment: "Cool story."
+      )
+      visit "/settings"
+      click_on "Logout"
+
+      stub_login_as reader
+      visit "/s/#{story.short_id}"
+      expect(page.find(:css, ".comment .comment_text")).to have_content("Cool story.")
+      expect(comment.score).to eq(1)
+      page.driver.post "/comments/#{comment.short_id}/upvote"
+      comment.reload
+      expect(comment.score).to eq(2)
+
+      story.update(merged_stories: [hot_take])
+      visit "/s/#{story.short_id}"
+      expect(page.find(:css, ".comment.upvoted .score")).to have_content("2")
+    end
+  end
+
+  feature "user threads list 4" do
+    scenario "viewing user's threads 4" do
+      poster = create(:user)
+      parent = create(:comment, story: story, user: poster)
+      reply = create(:comment, story: story, user: user, parent_comment: parent)
+
+      visit "/threads/#{user.username}"
+      expect(page).to have_content(parent.comment)
+      expect(page).to have_content(reply.comment)
+    end
+  end
+
+  # 5
+  scenario "posting a comment 5" do
+    visit "/s/#{story.short_id}"
+    expect(page).to have_button("Post")
+    fill_in "comment", with: "An example comment"
+    click_on "Post"
+    visit "/s/#{story.short_id}"
+    expect(page).to have_content("example comment")
+  end
+
+  feature "deleting comments 5" do
+    scenario "deleting a comment 5" do
+      comment = create(:comment,
+        user_id: user.id,
+        story_id: story.id,
+        created_at: 1.day.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("delete")
+
+      page.driver.post "/comments/#{comment.short_id}/delete"
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("undelete")
+      comment.reload
+      expect(comment.is_deleted?).to be(true)
+    end
+
+    scenario "trying to delete old comments 5" do
+      comment = create(:comment, user: user, story: story, created_at: 90.days.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).not_to have_link("delete")
+
+      page.driver.post "/comments/#{comment.short_id}/delete"
+      comment.reload
+      expect(comment.is_deleted?).to be(false)
+    end
+  end
+
+  feature "disowning comments 5" do
+    scenario "disowning a comment 5" do
+      # bypass validations to create inactive-user:
+      create(:user, :inactive)
+
+      comment = create(:comment, user_id: user.id, story_id: story.id, created_at: 90.days.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_link("disown")
+
+      page.driver.post "/comments/#{comment.short_id}/disown"
+      comment.reload
+      expect(comment.user).not_to eq(user)
+      visit "/s/#{story.short_id}"
+      expect(page).to have_content("inactive-user")
+    end
+
+    scenario "trying to disown recent comments 5" do
+      comment = create(:comment, user_id: user.id, story_id: story.id, created_at: 1.day.ago)
+      visit "/s/#{story.short_id}"
+      expect(page).not_to have_link("disown")
+
+      page.driver.post "/comments/#{comment.short_id}/disown"
+      comment.reload
+      expect(comment.user).to eq(user)
+    end
+  end
+
+  feature "Merging story comments 5" do
+    scenario "upvote merged story comments 5" do
+      reader = create(:user)
+      hot_take = create(:story)
+
+      comment = create(
+        :comment,
+        user_id: user.id,
+        story_id: story.id,
+        created_at: 90.days.ago,
+        comment: "Cool story."
+      )
+      visit "/settings"
+      click_on "Logout"
+
+      stub_login_as reader
+      visit "/s/#{story.short_id}"
+      expect(page.find(:css, ".comment .comment_text")).to have_content("Cool story.")
+      expect(comment.score).to eq(1)
+      page.driver.post "/comments/#{comment.short_id}/upvote"
+      comment.reload
+      expect(comment.score).to eq(2)
+
+      story.update(merged_stories: [hot_take])
+      visit "/s/#{story.short_id}"
+      expect(page.find(:css, ".comment.upvoted .score")).to have_content("2")
+    end
+  end
+
+  feature "user threads list 5" do
+    scenario "viewing user's threads 5" do
+      poster = create(:user)
+      parent = create(:comment, story: story, user: poster)
+      reply = create(:comment, story: story, user: user, parent_comment: parent)
+
+      visit "/threads/#{user.username}"
+      expect(page).to have_content(parent.comment)
+      expect(page).to have_content(reply.comment)
+    end
+  end
 end
